@@ -15,8 +15,6 @@
  */
 package io.servicetalk.http.netty;
 
-import io.servicetalk.concurrent.api.AsyncCloseables;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.api.DefaultThreadFactory;
 import io.servicetalk.http.api.ReservedStreamingHttpConnection;
 import io.servicetalk.http.api.StreamingHttpClient;
@@ -24,6 +22,8 @@ import io.servicetalk.http.api.StreamingHttpConnection;
 import io.servicetalk.http.api.StreamingHttpRequest;
 import io.servicetalk.http.api.StreamingHttpResponse;
 import io.servicetalk.http.api.StreamingHttpService;
+import io.servicetalk.transport.api.CompositeCloseable;
+import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.ServerContext;
 import io.servicetalk.transport.netty.internal.ExecutionContextExtension;
 
@@ -79,7 +79,7 @@ class HttpServerMultipleRequestsTest {
         };
         final int concurrency = 10;
         final int numRequests = 10;
-        CompositeCloseable compositeCloseable = AsyncCloseables.newCompositeCloseable();
+        CompositeCloseable compositeCloseable = CompositeCloseables.newCompositeCloseable();
         ServerContext ctx = compositeCloseable.append(HttpServers.forAddress(localAddress(0))
                 .ioExecutor(serverExecution.ioExecutor())
                 .executionStrategy(defaultStrategy(serverExecution.executor()))

@@ -22,14 +22,14 @@ import io.servicetalk.client.api.LoadBalancedConnection;
 import io.servicetalk.client.api.LoadBalancer;
 import io.servicetalk.client.api.LoadBalancerFactory;
 import io.servicetalk.client.api.ServiceDiscovererEvent;
-import io.servicetalk.concurrent.api.AsyncCloseables;
 import io.servicetalk.concurrent.api.Completable;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.api.Publisher;
 import io.servicetalk.concurrent.api.Single;
 import io.servicetalk.http.api.BlockingHttpClient;
 import io.servicetalk.http.api.FilterableStreamingHttpConnection;
 import io.servicetalk.http.api.SingleAddressHttpClientBuilder;
+import io.servicetalk.transport.api.CompositeCloseable;
+import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.HostAndPort;
 import io.servicetalk.transport.api.RetryableException;
 import io.servicetalk.transport.api.ServerContext;
@@ -77,7 +77,7 @@ class AutoRetryTest {
 
     @AfterEach
     void tearDown() throws Exception {
-        CompositeCloseable closeable = AsyncCloseables.newCompositeCloseable();
+        CompositeCloseable closeable = CompositeCloseables.newCompositeCloseable();
         if (client != null) {
             closeable.append(client.asClient());
         }

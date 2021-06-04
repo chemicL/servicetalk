@@ -15,11 +15,11 @@
  */
 package io.servicetalk.http.api;
 
-import io.servicetalk.concurrent.api.AsyncCloseables;
 import io.servicetalk.concurrent.api.Completable;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.api.Publisher;
 import io.servicetalk.concurrent.api.Single;
+import io.servicetalk.transport.api.CompositeCloseable;
+import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.ConnectionContext;
 
 import org.junit.jupiter.api.AfterEach;
@@ -64,7 +64,7 @@ public abstract class AbstractHttpRequesterFilterTest {
     public enum RequesterType { Client, Connection, ReservedConnection }
 
     private final SSLSession sslSession = mock(SSLSession.class);
-    private final CompositeCloseable closeables = AsyncCloseables.newCompositeCloseable();
+    private final CompositeCloseable closeables = CompositeCloseables.newCompositeCloseable();
 
     @Mock
     private HttpExecutionContext mockExecutionContext;

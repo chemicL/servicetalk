@@ -19,9 +19,7 @@ import io.servicetalk.client.api.ConnectionFactoryFilter;
 import io.servicetalk.client.api.DelegatingConnectionFactory;
 import io.servicetalk.concurrent.Cancellable;
 import io.servicetalk.concurrent.CompletableSource;
-import io.servicetalk.concurrent.api.AsyncCloseables;
 import io.servicetalk.concurrent.api.Completable;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.api.Single;
 import io.servicetalk.http.api.BlockingHttpClient;
 import io.servicetalk.http.api.DelegatingHttpConnectionContext;
@@ -37,6 +35,8 @@ import io.servicetalk.http.api.SingleAddressHttpClientBuilder;
 import io.servicetalk.http.api.StreamingHttpConnectionFilter;
 import io.servicetalk.http.api.StreamingHttpRequest;
 import io.servicetalk.http.api.StreamingHttpResponse;
+import io.servicetalk.transport.api.CompositeCloseable;
+import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.HostAndPort;
 import io.servicetalk.transport.api.ServerContext;
 import io.servicetalk.transport.api.TransportObserver;
@@ -77,7 +77,7 @@ class ConnectionFactoryFilterTest {
 
     @AfterEach
     void tearDown() throws Exception {
-        CompositeCloseable closeable = AsyncCloseables.newCompositeCloseable();
+        CompositeCloseable closeable = CompositeCloseables.newCompositeCloseable();
         if (client != null) {
             closeable.append(client.asClient());
         }

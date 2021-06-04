@@ -17,11 +17,8 @@ package io.servicetalk.grpc.api;
 
 import io.servicetalk.concurrent.BlockingIterable;
 import io.servicetalk.concurrent.BlockingIterator;
-import io.servicetalk.concurrent.GracefulAutoCloseable;
 import io.servicetalk.concurrent.api.AsyncCloseable;
-import io.servicetalk.concurrent.api.AsyncCloseables;
 import io.servicetalk.concurrent.api.Completable;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.api.Publisher;
 import io.servicetalk.concurrent.api.Single;
 import io.servicetalk.encoding.api.ContentCodec;
@@ -52,7 +49,10 @@ import io.servicetalk.http.api.StreamingHttpRequest;
 import io.servicetalk.http.api.StreamingHttpResponse;
 import io.servicetalk.http.api.StreamingHttpResponseFactory;
 import io.servicetalk.http.api.StreamingHttpService;
+import io.servicetalk.transport.api.CompositeCloseable;
+import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.ExecutionContext;
+import io.servicetalk.transport.api.GracefulAutoCloseable;
 import io.servicetalk.transport.api.ServerContext;
 
 import java.io.IOException;
@@ -114,7 +114,7 @@ final class GrpcRouter {
     }
 
     Single<ServerContext> bind(final ServerBinder binder, final ExecutionContext executionContext) {
-        final CompositeCloseable closeable = AsyncCloseables.newCompositeCloseable();
+        final CompositeCloseable closeable = CompositeCloseables.newCompositeCloseable();
         final Map<String, StreamingHttpService> allRoutes = new HashMap<>();
         populateRoutes(executionContext, allRoutes, routes, closeable);
         populateRoutes(executionContext, allRoutes, streamingRoutes, closeable);
@@ -708,7 +708,7 @@ final class GrpcRouter {
 
         RouteProviders(final Map<String, RouteProvider> routes) {
             this.routes = routes;
-            closeable = AsyncCloseables.newCompositeCloseable();
+            closeable = CompositeCloseables.newCompositeCloseable();
             for (RouteProvider provider : routes.values()) {
                 closeable.append(provider);
             }

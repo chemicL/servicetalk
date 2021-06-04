@@ -22,11 +22,11 @@ import io.servicetalk.concurrent.PublisherSource;
 import io.servicetalk.concurrent.api.AsyncCloseable;
 import io.servicetalk.concurrent.api.BufferStrategy.Accumulator;
 import io.servicetalk.concurrent.api.Completable;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.api.Publisher;
 import io.servicetalk.http.api.HttpClient;
 import io.servicetalk.http.api.HttpResponseStatus;
 import io.servicetalk.http.api.SingleAddressHttpClientBuilder;
+import io.servicetalk.transport.api.CompositeCloseable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +43,6 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static io.servicetalk.buffer.api.CharSequences.newAsciiString;
-import static io.servicetalk.concurrent.api.AsyncCloseables.newCompositeCloseable;
 import static io.servicetalk.concurrent.api.AsyncCloseables.toAsyncCloseable;
 import static io.servicetalk.concurrent.api.BufferStrategies.forCountOrTime;
 import static io.servicetalk.concurrent.api.Completable.completed;
@@ -55,6 +54,7 @@ import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
 import static io.servicetalk.http.api.HttpHeaderNames.CONTENT_TYPE;
 import static io.servicetalk.http.api.HttpHeaderValues.APPLICATION_JSON;
 import static io.servicetalk.http.api.HttpResponseStatus.StatusClass.SUCCESSFUL_2XX;
+import static io.servicetalk.transport.api.CompositeCloseables.newCompositeCloseable;
 import static java.time.Duration.ofSeconds;
 import static java.util.Objects.requireNonNull;
 import static zipkin2.CheckResult.OK;

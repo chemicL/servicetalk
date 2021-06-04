@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019, 2021 Apple Inc. and the ServiceTalk project authors
+ * Copyright © 2021 Apple Inc. and the ServiceTalk project authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.servicetalk.grpc.api;
-
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+package io.servicetalk.transport.api;
 
 /**
- * A blocking <a href="https://www.grpc.io">gRPC</a> service.
+ * A utility class to create {@link CompositeCloseable}s.
  */
-public interface BlockingGrpcService extends GracefulAutoCloseable {
+public final class CompositeCloseables {
 
-    @Override
-    default void close() throws Exception {
-        // noop
+    private CompositeCloseables() {
+        // No instances.
+    }
+
+    /**
+     * Creates a new {@link CompositeCloseable}.
+     *
+     * @return A new {@link CompositeCloseable}.
+     */
+    public static CompositeCloseable newCompositeCloseable() {
+        return new DefaultCompositeCloseable();
     }
 }

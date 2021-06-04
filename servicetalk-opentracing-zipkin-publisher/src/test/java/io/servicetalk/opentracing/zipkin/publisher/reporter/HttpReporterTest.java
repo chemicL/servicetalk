@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Apple Inc. and the ServiceTalk project authors
+ * Copyright © 2020-2021 Apple Inc. and the ServiceTalk project authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 package io.servicetalk.opentracing.zipkin.publisher.reporter;
 
 import io.servicetalk.buffer.api.Buffer;
-import io.servicetalk.concurrent.api.AsyncCloseables;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.internal.ServiceTalkTestTimeout;
 import io.servicetalk.http.api.HttpRequest;
 import io.servicetalk.http.api.HttpResponse;
 import io.servicetalk.http.api.HttpResponseFactory;
 import io.servicetalk.http.api.HttpServiceContext;
 import io.servicetalk.opentracing.zipkin.publisher.reporter.HttpReporter.Builder;
+import io.servicetalk.transport.api.CompositeCloseable;
+import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.ServerContext;
 
 import org.junit.After;
@@ -93,7 +93,7 @@ public class HttpReporterTest {
 
     @After
     public void tearDown() throws Exception {
-        CompositeCloseable closeable = AsyncCloseables.newCompositeCloseable();
+        CompositeCloseable closeable = CompositeCloseables.newCompositeCloseable();
         if (reporter != null) {
             closeable.append(reporter);
         }

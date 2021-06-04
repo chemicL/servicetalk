@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Apple Inc. and the ServiceTalk project authors
+ * Copyright © 2019, 2021 Apple Inc. and the ServiceTalk project authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.servicetalk.grpc.netty;
 
-import io.servicetalk.concurrent.GracefulAutoCloseable;
 import io.servicetalk.concurrent.api.AsyncCloseable;
 import io.servicetalk.concurrent.api.Completable;
 import io.servicetalk.concurrent.internal.ServiceTalkTestTimeout;
@@ -29,6 +28,7 @@ import io.servicetalk.grpc.netty.TesterProto.Tester.TestRequestStreamRpc;
 import io.servicetalk.grpc.netty.TesterProto.Tester.TestResponseStreamRpc;
 import io.servicetalk.grpc.netty.TesterProto.Tester.TestRpc;
 import io.servicetalk.grpc.netty.TesterProto.Tester.TesterService;
+import io.servicetalk.transport.api.GracefulAutoCloseable;
 import io.servicetalk.transport.api.ServerContext;
 
 import org.junit.Rule;

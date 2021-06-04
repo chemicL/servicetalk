@@ -16,12 +16,12 @@
 package io.servicetalk.http.netty;
 
 import io.servicetalk.buffer.api.Buffer;
-import io.servicetalk.concurrent.api.AsyncCloseables;
-import io.servicetalk.concurrent.api.CompositeCloseable;
 import io.servicetalk.concurrent.api.Single;
 import io.servicetalk.http.api.StreamingHttpClient;
 import io.servicetalk.http.api.StreamingHttpConnection;
 import io.servicetalk.http.api.StreamingHttpResponse;
+import io.servicetalk.transport.api.CompositeCloseable;
+import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.ServerContext;
 import io.servicetalk.transport.netty.internal.ExecutionContextExtension;
 
@@ -55,7 +55,7 @@ class HttpConnectionEmptyPayloadTest {
 
     @Test
     void headRequestContentEmpty() throws Exception {
-        try (CompositeCloseable closeable = AsyncCloseables.newCompositeCloseable()) {
+        try (CompositeCloseable closeable = CompositeCloseables.newCompositeCloseable()) {
             final int expectedContentLength = 128;
             byte[] expectedPayload = new byte[expectedContentLength];
             ThreadLocalRandom.current().nextBytes(expectedPayload);
