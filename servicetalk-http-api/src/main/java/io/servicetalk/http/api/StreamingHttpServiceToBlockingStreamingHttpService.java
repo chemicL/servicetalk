@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static io.servicetalk.concurrent.api.SourceAdapters.toSource;
+import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
 import static io.servicetalk.http.api.BlockingUtils.futureGetCancelOnInterrupt;
 import static io.servicetalk.utils.internal.PlatformDependent.throwException;
 import static java.util.Objects.requireNonNull;
@@ -77,13 +78,13 @@ final class StreamingHttpServiceToBlockingStreamingHttpService implements Blocki
     }
 
     @Override
-    public void close() throws Exception {
-        original.closeAsync().toFuture().get();
+    public void close() {
+        awaitTermination(original.closeAsync().toFuture());
     }
 
     @Override
-    public void closeGracefully() throws Exception {
-        original.closeAsyncGracefully().toFuture().get();
+    public void closeGracefully() {
+        awaitTermination(original.closeAsyncGracefully().toFuture());
     }
 
     private static final class MessageBodyToPayloadWriter extends SubscribableCompletable {

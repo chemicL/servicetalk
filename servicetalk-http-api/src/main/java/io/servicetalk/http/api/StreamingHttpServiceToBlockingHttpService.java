@@ -15,6 +15,9 @@
  */
 package io.servicetalk.http.api;
 
+import io.servicetalk.concurrent.internal.FutureUtils;
+
+import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
 import static io.servicetalk.http.api.BlockingUtils.futureGetCancelOnInterrupt;
 import static java.util.Objects.requireNonNull;
 
@@ -35,7 +38,7 @@ final class StreamingHttpServiceToBlockingHttpService implements BlockingHttpSer
     }
 
     @Override
-    public void close() throws Exception {
-        original.closeAsync().toFuture().get();
+    public void close() {
+        awaitTermination(original.closeAsync().toFuture());
     }
 }

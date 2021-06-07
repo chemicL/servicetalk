@@ -18,14 +18,14 @@ package io.servicetalk.http.api;
 import io.servicetalk.concurrent.PublisherSource;
 import io.servicetalk.concurrent.api.Publisher;
 import io.servicetalk.concurrent.api.Single;
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
 
 /**
  * Represents a single fixed connection to a HTTP server.
  */
-public interface HttpConnection extends HttpRequester, GracefulAutoCloseable {
+public interface HttpConnection extends HttpRequester, GracefulCloseable {
     /**
      * Send a {@code request}.
      *
@@ -80,12 +80,12 @@ public interface HttpConnection extends HttpRequester, GracefulAutoCloseable {
     }
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         awaitTermination(closeAsync().toFuture());
     }
 
     @Override
-    default void closeGracefully() throws Exception {
+    default void closeGracefully() {
         awaitTermination(closeAsyncGracefully().toFuture());
     }
 }

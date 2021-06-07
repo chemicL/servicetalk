@@ -24,7 +24,7 @@ import java.io.Closeable;
  * A {@link AsyncCloseable} and {@link Closeable} that allows for adding new {@link AsyncCloseable}s till it is
  * closed.
  */
-public interface CompositeCloseable extends AsyncCloseable, GracefulAutoCloseable {
+public interface CompositeCloseable extends AsyncCloseable, GracefulCloseable {
 
     /**
      * Merges the passed {@link AsyncCloseable} with this {@link CompositeCloseable} such that when this {@link
@@ -150,9 +150,7 @@ public interface CompositeCloseable extends AsyncCloseable, GracefulAutoCloseabl
      * Closes all contained {@link AsyncCloseable}s and awaits termination of all of them. If any of the contained
      * {@link AsyncCloseable}s terminated with a failure, this method terminates with an {@link Exception} only after
      * all the contained {@link AsyncCloseable}s have terminated.
-     *
-     * @throws Exception If any of the contained {@link AsyncCloseable}s terminate with a failure.
      */
     @Override
-    void close() throws Exception;
+    void close();
 }

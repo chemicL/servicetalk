@@ -307,7 +307,7 @@ public abstract class AbstractHttpRequesterFilterTest {
             }
 
             @Override
-            public void close() throws Exception {
+            public void close() {
                 connection.close();
             }
 

@@ -52,7 +52,7 @@ import io.servicetalk.http.api.StreamingHttpService;
 import io.servicetalk.transport.api.CompositeCloseable;
 import io.servicetalk.transport.api.CompositeCloseables;
 import io.servicetalk.transport.api.ExecutionContext;
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 import io.servicetalk.transport.api.ServerContext;
 
 import java.io.IOException;
@@ -471,12 +471,12 @@ final class GrpcRouter {
                         }
 
                         @Override
-                        public void close() throws Exception {
+                        public void close() {
                             route.close();
                         }
 
                         @Override
-                        public void closeGracefully() throws Exception {
+                        public void closeGracefully() {
                             route.closeGracefully();
                         }
                     }, strategy -> executionStrategy == null ? strategy : executionStrategy),
@@ -540,12 +540,12 @@ final class GrpcRouter {
                         }
 
                         @Override
-                        public void close() throws Exception {
+                        public void close() {
                             route.close();
                         }
 
                         @Override
-                        public void closeGracefully() throws Exception {
+                        public void closeGracefully() {
                             route.closeGracefully();
                         }
                     }, strategy -> executionStrategy == null ? strategy : executionStrategy),
@@ -587,12 +587,12 @@ final class GrpcRouter {
                         }
 
                         @Override
-                        public void close() throws Exception {
+                        public void close() {
                             route.close();
                         }
 
                         @Override
-                        public void closeGracefully() throws Exception {
+                        public void closeGracefully() {
                             route.closeGracefully();
                         }
                     },
@@ -640,12 +640,12 @@ final class GrpcRouter {
                         }
 
                         @Override
-                        public void close() throws Exception {
+                        public void close() {
                             route.close();
                         }
 
                         @Override
-                        public void closeGracefully() throws Exception {
+                        public void closeGracefully() {
                             route.closeGracefully();
                         }
                     },
@@ -761,7 +761,7 @@ final class GrpcRouter {
                       final Supplier<RequestStreamingRoute<?, ?>> toRequestStreamingRouteConverter,
                       final Supplier<ResponseStreamingRoute<?, ?>> toResponseStreamingRouteConverter,
                       final Supplier<Route<?, ?>> toRouteConverter,
-                      final GracefulAutoCloseable closeable) {
+                      final GracefulCloseable closeable) {
             this(routeProvider, toStreamingConverter, toRequestStreamingRouteConverter,
                     toResponseStreamingRouteConverter, toRouteConverter, toAsyncCloseable(closeable));
         }

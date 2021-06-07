@@ -28,7 +28,7 @@ import io.servicetalk.grpc.netty.TesterProto.Tester.TestRequestStreamRpc;
 import io.servicetalk.grpc.netty.TesterProto.Tester.TestResponseStreamRpc;
 import io.servicetalk.grpc.netty.TesterProto.Tester.TestRpc;
 import io.servicetalk.grpc.netty.TesterProto.Tester.TesterService;
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 import io.servicetalk.transport.api.ServerContext;
 
 import org.junit.Rule;
@@ -162,8 +162,8 @@ public class ClosureTest {
         return autoCloseable;
     }
 
-    private <T extends GracefulAutoCloseable> T setupBlockingCloseMock(final T autoCloseable,
-                                                                       final AsyncCloseable closeSignal)
+    private <T extends GracefulCloseable> T setupBlockingCloseMock(final T autoCloseable,
+                                                                   final AsyncCloseable closeSignal)
             throws Exception {
         doAnswer(__ -> closeSignal.closeAsync().toFuture().get()).when(autoCloseable).close();
         doAnswer(__ -> closeSignal.closeAsyncGracefully().toFuture().get()).when(autoCloseable).closeGracefully();
@@ -181,11 +181,11 @@ public class ClosureTest {
         verifyNoMoreInteractions(closeable);
     }
 
-    private void verifyClosure(GracefulAutoCloseable closeable) throws Exception {
+    private void verifyClosure(GracefulCloseable closeable) throws Exception {
         verifyClosure(closeable, 1);
     }
 
-    private void verifyClosure(GracefulAutoCloseable closeable, int times) throws Exception {
+    private void verifyClosure(GracefulCloseable closeable, int times) throws Exception {
         if (closeGracefully) {
             verify(closeable, times(times)).closeGracefully();
         } else {

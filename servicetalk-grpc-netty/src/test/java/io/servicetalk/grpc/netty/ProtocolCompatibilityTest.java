@@ -1223,7 +1223,7 @@ public class ProtocolCompatibilityTest {
             }
 
             @Override
-            public void close() throws Exception {
+            public void close() {
                 channel.shutdown().awaitTermination(DEFAULT_TIMEOUT_SECONDS, SECONDS);
             }
 

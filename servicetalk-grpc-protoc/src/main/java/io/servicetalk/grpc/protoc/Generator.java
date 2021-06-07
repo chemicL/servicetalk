@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import javax.annotation.Nullable;
 import javax.lang.model.element.Modifier;
@@ -1144,7 +1145,7 @@ final class Generator {
                         .addStatement("return $L", client)
                         .build())
                 .addMethod(newDelegatingMethodSpec(executionContext, client, GrpcExecutionContext, null))
-                .addMethod(newDelegatingMethodSpec(close, client, null, ClassName.get(Exception.class)));
+                .addMethod(newDelegatingMethodSpec(close, client, null, null));
 
         state.clientMetaDatas.forEach(clientMetaData -> {
             final CodeBlock requestExpression = clientMetaData.methodProto.getClientStreaming() ?
@@ -1315,8 +1316,18 @@ final class Generator {
         return methodBuilder(blockingMethodName)
                 .addModifiers(PUBLIC)
                 .addAnnotation(Override.class)
-                .addException(Exception.class)
+                .beginControlFlow("try")
                 .addStatement("$L.$L().toFuture().get()", fieldName, completableMethodName)
+                .nextControlFlow("catch ($T e)", InterruptedException.class)
+                .addStatement("Thread.currentThread().interrupt()")
+                // TODO(dj) throw something?
+                .nextControlFlow("catch ($T e)", ExecutionException.class)
+                .beginControlFlow("if (e.getCause() != null)")
+                .addStatement("throw new RuntimeException(e.getCause())")
+                .endControlFlow()
+                .nextControlFlow("catch ($T e)", RuntimeException.class)
+                .addStatement("throw e")
+                .endControlFlow()
                 .build();
     }
 }

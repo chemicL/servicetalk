@@ -16,7 +16,7 @@
 package io.servicetalk.grpc.api;
 
 import io.servicetalk.concurrent.api.ListenableAsyncCloseable;
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
 
@@ -26,7 +26,7 @@ import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
  * @param <BlockingClient> The corresponding {@link BlockingGrpcClient}
  */
 public interface GrpcClient<BlockingClient extends BlockingGrpcClient>
-        extends ListenableAsyncCloseable, GracefulAutoCloseable {
+        extends ListenableAsyncCloseable, GracefulCloseable {
 
     /**
      * Converts this {@link GrpcClient} to a blocking client.
@@ -46,7 +46,7 @@ public interface GrpcClient<BlockingClient extends BlockingGrpcClient>
     GrpcExecutionContext executionContext();
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         awaitTermination(closeAsync().toFuture());
     }
 }

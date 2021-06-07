@@ -87,12 +87,12 @@ final class StreamingHttpConnectionToBlockingStreamingHttpConnection implements 
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         connection.close();
     }
 
     @Override
-    public void closeGracefully() throws Exception {
+    public void closeGracefully() {
         connection.closeGracefully();
     }
 

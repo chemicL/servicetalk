@@ -15,10 +15,12 @@
  */
 package io.servicetalk.transport.api;
 
+import java.io.Closeable;
+
 /**
  * An extension of {@link AutoCloseable} to add graceful closure semantics.
  */
-public interface GracefulAutoCloseable extends AutoCloseable {
+public interface GracefulCloseable extends Closeable {
 
     /**
      * Used to close/shutdown a resource, similar to {@link #close()}, but attempts to cleanup state before
@@ -31,7 +33,13 @@ public interface GracefulAutoCloseable extends AutoCloseable {
      *
      * @throws Exception if graceful closure failed.
      */
-    default void closeGracefully() throws Exception {
+    default void closeGracefully() {
         close();
     }
+
+    /**
+     * TODO(dj) fill in contract
+     */
+    @Override
+    void close();
 }

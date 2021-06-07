@@ -16,13 +16,13 @@
 package io.servicetalk.http.api;
 
 import io.servicetalk.concurrent.api.Single;
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 /**
  * The equivalent of {@link HttpService} but with synchronous/blocking APIs instead of asynchronous APIs.
  */
 @FunctionalInterface
-public interface BlockingHttpService extends GracefulAutoCloseable {
+public interface BlockingHttpService extends GracefulCloseable {
     /**
      * Handles a single HTTP request.
      *
@@ -36,7 +36,7 @@ public interface BlockingHttpService extends GracefulAutoCloseable {
             throws Exception;
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         // noop
     }
 }

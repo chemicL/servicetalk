@@ -15,15 +15,15 @@
  */
 package io.servicetalk.grpc.api;
 
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 /**
  * A blocking <a href="https://www.grpc.io">gRPC</a> service.
  */
-public interface BlockingGrpcService extends GracefulAutoCloseable {
+public interface BlockingGrpcService extends GracefulCloseable {
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         // noop
     }
 }

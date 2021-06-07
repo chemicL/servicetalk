@@ -76,12 +76,12 @@ final class StreamingHttpClientToHttpClient implements HttpClient {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         client.close();
     }
 
     @Override
-    public void closeGracefully() throws Exception {
+    public void closeGracefully() {
         client.closeGracefully();
     }
 
@@ -201,12 +201,12 @@ final class StreamingHttpClientToHttpClient implements HttpClient {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
             connection.close();
         }
 
         @Override
-        public void closeGracefully() throws Exception {
+        public void closeGracefully() {
             connection.closeGracefully();
         }
 

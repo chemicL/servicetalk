@@ -24,7 +24,7 @@ import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
 /**
  * Context for servers.
  */
-public interface ServerContext extends ListenableAsyncCloseable, GracefulAutoCloseable {
+public interface ServerContext extends ListenableAsyncCloseable, GracefulCloseable {
 
     /**
      * Listen address for the server associated with this context.
@@ -50,12 +50,12 @@ public interface ServerContext extends ListenableAsyncCloseable, GracefulAutoClo
     }
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         awaitTermination(closeAsync().toFuture());
     }
 
     @Override
-    default void closeGracefully() throws Exception {
+    default void closeGracefully() {
         awaitTermination(closeAsyncGracefully().toFuture());
     }
 }

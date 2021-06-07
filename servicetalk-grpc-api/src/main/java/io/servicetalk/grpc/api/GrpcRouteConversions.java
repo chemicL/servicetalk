@@ -29,7 +29,7 @@ import io.servicetalk.grpc.api.GrpcRoutes.RequestStreamingRoute;
 import io.servicetalk.grpc.api.GrpcRoutes.ResponseStreamingRoute;
 import io.servicetalk.grpc.api.GrpcRoutes.Route;
 import io.servicetalk.grpc.api.GrpcRoutes.StreamingRoute;
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 import java.io.IOException;
 
@@ -298,7 +298,7 @@ final class GrpcRouteConversions {
         return toResponseStreamingRoute(toStreaming(original));
     }
 
-    static AsyncCloseable toAsyncCloseable(final GracefulAutoCloseable original) {
+    static AsyncCloseable toAsyncCloseable(final GracefulCloseable original) {
         return AsyncCloseables.toAsyncCloseable(graceful -> new Completable() {
             @Override
             protected void handleSubscribe(final CompletableSource.Subscriber subscriber) {

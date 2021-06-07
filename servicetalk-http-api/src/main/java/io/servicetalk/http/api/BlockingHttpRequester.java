@@ -15,12 +15,12 @@
  */
 package io.servicetalk.http.api;
 
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 /**
  * The equivalent of {@link HttpRequester} with synchronous/blocking APIs instead of asynchronous APIs.
  */
-public interface BlockingHttpRequester extends HttpRequestFactory, GracefulAutoCloseable {
+public interface BlockingHttpRequester extends HttpRequestFactory, GracefulCloseable {
     /**
      * Send a {@code request} using the passed {@link HttpExecutionStrategy strategy}.
      *
@@ -49,7 +49,7 @@ public interface BlockingHttpRequester extends HttpRequestFactory, GracefulAutoC
     HttpResponseFactory httpResponseFactory();
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         // noop
     }
 }

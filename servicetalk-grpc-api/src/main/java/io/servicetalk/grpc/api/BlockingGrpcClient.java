@@ -15,14 +15,14 @@
  */
 package io.servicetalk.grpc.api;
 
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 /**
  * A blocking client to a <a href="https://www.grpc.io">gRPC</a> service.
  *
  * @param <Client> The corresponding {@link GrpcClient}
  */
-public interface BlockingGrpcClient<Client extends GrpcClient> extends GracefulAutoCloseable {
+public interface BlockingGrpcClient<Client extends GrpcClient> extends GracefulCloseable {
 
     /**
      * Converts this {@link BlockingGrpcClient} to a client.

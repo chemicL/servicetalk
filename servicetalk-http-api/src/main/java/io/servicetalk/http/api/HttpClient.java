@@ -16,7 +16,7 @@
 package io.servicetalk.http.api;
 
 import io.servicetalk.concurrent.api.Single;
-import io.servicetalk.transport.api.GracefulAutoCloseable;
+import io.servicetalk.transport.api.GracefulCloseable;
 
 import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
 
@@ -24,7 +24,7 @@ import static io.servicetalk.concurrent.internal.FutureUtils.awaitTermination;
  * Provides a means to issue requests against HTTP service. The implementation is free to maintain a collection of
  * {@link HttpConnection} instances and distribute calls to {@link #request(HttpRequest)} amongst this collection.
  */
-public interface HttpClient extends HttpRequester, GracefulAutoCloseable {
+public interface HttpClient extends HttpRequester, GracefulCloseable {
     /**
      * Send a {@code request}.
      *
@@ -82,12 +82,12 @@ public interface HttpClient extends HttpRequester, GracefulAutoCloseable {
     }
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         awaitTermination(closeAsync().toFuture());
     }
 
     @Override
-    default void closeGracefully() throws Exception {
+    default void closeGracefully() {
         awaitTermination(closeAsyncGracefully().toFuture());
     }
 }
