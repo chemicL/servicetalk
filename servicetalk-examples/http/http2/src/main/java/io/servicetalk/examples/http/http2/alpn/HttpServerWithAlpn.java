@@ -19,6 +19,8 @@ import io.servicetalk.http.netty.HttpServers;
 import io.servicetalk.test.resources.DefaultTestCerts;
 import io.servicetalk.transport.api.ServerSslConfigBuilder;
 
+import java.util.Collections;
+
 import static io.servicetalk.http.api.HttpSerializationProviders.textSerializer;
 import static io.servicetalk.http.netty.HttpProtocolConfigs.h1Default;
 import static io.servicetalk.http.netty.HttpProtocolConfigs.h2Default;
@@ -33,8 +35,9 @@ public final class HttpServerWithAlpn {
     public static void main(String[] args) throws Exception {
         HttpServers.forPort(8080)
                 .protocols(h2Default(), h1Default()) // Configure support for HTTP/2 and HTTP/1.1 protocols
-                .sslConfig(new ServerSslConfigBuilder(DefaultTestCerts::loadServerPem, DefaultTestCerts::loadServerKey)
-                        .build())
+                .sslConfig(
+                        new ServerSslConfigBuilder(DefaultTestCerts::loadServerPem, DefaultTestCerts::loadServerKey)
+                        .build(), Collections.emptyMap())
                 // Note: this example demonstrates only blocking-aggregated programming paradigm, for asynchronous and
                 // streaming API see helloworld examples.
                 .listenBlockingAndAwait((ctx, request, responseFactory) ->

@@ -40,7 +40,7 @@ final class HttpDebugUtils {
                                                                      final Protocol protocol,
                                                                      final Channel channel) {
         if (LOGGER.isDebugEnabled()) {
-            return contextSingle.whenOnSuccess(ctx -> LOGGER.debug("{} {} pipeline initialized: {}",
+            return contextSingle.beforeOnError(ctx -> LOGGER.debug("{} {} pipeline initialized: {}",
                     channel, protocol.name(), join(", ", channel.pipeline().names())));
         }
         return contextSingle;

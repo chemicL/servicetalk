@@ -25,6 +25,7 @@ import io.servicetalk.http.api.FilterableStreamingHttpConnection;
 import io.servicetalk.http.api.HttpExecutionStrategy;
 import io.servicetalk.http.api.HttpLoadBalancerFactory;
 import io.servicetalk.http.api.HttpProtocolConfig;
+import io.servicetalk.http.api.SingleAddressHttpClientBuilder;
 import io.servicetalk.http.api.StreamingHttpClientFilter;
 import io.servicetalk.http.api.StreamingHttpClientFilterFactory;
 import io.servicetalk.http.api.StreamingHttpConnectionFilterFactory;
@@ -90,6 +91,15 @@ public abstract class GrpcClientBuilder<U, R>
 
     @Override
     public abstract GrpcClientBuilder<U, R> sslConfig(ClientSslConfig sslConfig);
+
+    @Override
+    public abstract GrpcClientBuilder<U, R> inferPeerHost(boolean shouldInfer);
+
+    @Override
+    public abstract GrpcClientBuilder<U, R> inferPeerPort(boolean shouldInfer);
+
+    @Override
+    public abstract GrpcClientBuilder<U, R> inferSniHostname(boolean shouldInfer);
 
     @Override
     public abstract GrpcClientBuilder<U, R> autoRetryStrategy(

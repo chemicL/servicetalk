@@ -85,6 +85,7 @@ import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -926,7 +927,7 @@ public class ProtocolCompatibilityTest {
         }
         return ssl ?
                 serverBuilder.sslConfig(new ServerSslConfigBuilder(DefaultTestCerts::loadServerPem,
-                        DefaultTestCerts::loadServerKey).provider(OPENSSL).build()) :
+                        DefaultTestCerts::loadServerKey).provider(OPENSSL).build(), Collections.emptyMap()) :
                 serverBuilder;
     }
 

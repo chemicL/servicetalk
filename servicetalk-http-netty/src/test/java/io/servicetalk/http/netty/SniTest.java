@@ -17,6 +17,7 @@ package io.servicetalk.http.netty;
 
 import io.servicetalk.http.api.BlockingHttpClient;
 import io.servicetalk.http.api.HttpResponseStatus;
+import io.servicetalk.logging.api.LogLevel;
 import io.servicetalk.test.resources.DefaultTestCerts;
 import io.servicetalk.transport.api.ClientSslConfigBuilder;
 import io.servicetalk.transport.api.ServerContext;
@@ -31,6 +32,7 @@ import javax.net.ssl.SSLHandshakeException;
 import static io.servicetalk.test.resources.DefaultTestCerts.serverPemHostname;
 import static io.servicetalk.transport.netty.internal.AddressUtils.localAddress;
 import static io.servicetalk.transport.netty.internal.AddressUtils.serverHostAndPort;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,11 +94,15 @@ class SniTest {
     @Test
     void noSniClientDefaultServerFallbackSuccess() throws Exception {
         try (ServerContext serverContext = HttpServers.forAddress(localAddress(0))
+                .protocols(HttpProtocolConfigs.h2().build())
                 .sslConfig(trustedServerConfig(), singletonMap("localhost", untrustedServerConfig()))
+                // .sslConfig(trustedServerConfig())
+                // .enableWireLogging("SERVER", LogLevel.INFO, () -> true)
                 .listenBlockingAndAwait((ctx, request, responseFactory) -> responseFactory.ok());
              BlockingHttpClient client = HttpClients.forSingleAddress(
                      InetAddress.getLoopbackAddress().getHostName(),
                      serverHostAndPort(serverContext).port())
+                     .protocols(HttpProtocolConfigs.h2().build())
                      .sslConfig(new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
                              .peerHost(serverPemHostname()).build())
                      .inferSniHostname(false)

@@ -132,6 +132,7 @@ final class H2ServerParentConnectionContext extends H2ParentConnectionContext im
                     // that NettyToStChannelInboundHandler will not see them. This is currently not an issue and would
                     // require some pipeline modifications if we wanted to insert NettyToStChannelInboundHandler first,
                     // but not allow any other handlers to be after it.
+                    // TODO(dj): is this the issue here?
                     initializer.init(channel);
                     pipeline = channel.pipeline();
 

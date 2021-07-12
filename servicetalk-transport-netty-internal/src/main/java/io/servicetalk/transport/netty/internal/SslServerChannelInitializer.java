@@ -38,6 +38,7 @@ public final class SslServerChannelInitializer implements ChannelInitializer {
 
     @Override
     public void init(Channel channel) {
+        System.out.println(sslContext.attributes());
         channel.pipeline().addLast(newHandler(sslContext, POOLED_ALLOCATOR));
     }
 }

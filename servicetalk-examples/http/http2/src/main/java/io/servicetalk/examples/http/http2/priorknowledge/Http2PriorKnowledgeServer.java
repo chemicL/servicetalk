@@ -16,6 +16,10 @@
 package io.servicetalk.examples.http.http2.priorknowledge;
 
 import io.servicetalk.http.netty.HttpServers;
+import io.servicetalk.test.resources.DefaultTestCerts;
+import io.servicetalk.transport.api.ServerSslConfigBuilder;
+
+import java.util.Collections;
 
 import static io.servicetalk.http.api.HttpSerializationProviders.textSerializer;
 import static io.servicetalk.http.netty.HttpProtocolConfigs.h2Default;
@@ -30,6 +34,12 @@ public final class Http2PriorKnowledgeServer {
                 .protocols(h2Default()) // Configure HTTP/2 Prior-Knowledge
                 // Note: this example demonstrates only blocking-aggregated programming paradigm, for asynchronous and
                 // streaming API see helloworld examples.
+                .sslConfig(
+                        new ServerSslConfigBuilder(DefaultTestCerts::loadServerPem, DefaultTestCerts::loadServerKey)
+                                .build()
+                        ,
+                        Collections.emptyMap()
+                )
                 .listenBlockingAndAwait((ctx, request, responseFactory) ->
                         responseFactory.ok().payloadBody("I speak HTTP/2!", textSerializer()))
                 .awaitShutdown();
