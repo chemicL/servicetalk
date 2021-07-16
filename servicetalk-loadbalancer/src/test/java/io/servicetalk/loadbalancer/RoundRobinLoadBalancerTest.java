@@ -19,16 +19,19 @@ import io.servicetalk.client.api.ConnectionFactory;
 import io.servicetalk.client.api.ConnectionRejectedException;
 import io.servicetalk.client.api.DefaultServiceDiscovererEvent;
 import io.servicetalk.client.api.LoadBalancedConnection;
+import io.servicetalk.client.api.LoadBalancer;
 import io.servicetalk.client.api.LoadBalancerReadyEvent;
 import io.servicetalk.client.api.NoAvailableHostException;
 import io.servicetalk.client.api.ServiceDiscovererEvent;
 import io.servicetalk.concurrent.PublisherSource.Subscriber;
 import io.servicetalk.concurrent.PublisherSource.Subscription;
 import io.servicetalk.concurrent.api.Completable;
+import io.servicetalk.concurrent.api.Executor;
 import io.servicetalk.concurrent.api.LegacyTestSingle;
 import io.servicetalk.concurrent.api.ListenableAsyncCloseable;
 import io.servicetalk.concurrent.api.Publisher;
 import io.servicetalk.concurrent.api.Single;
+import io.servicetalk.concurrent.api.TestExecutor;
 import io.servicetalk.concurrent.api.TestPublisher;
 import io.servicetalk.concurrent.api.TestSubscription;
 import io.servicetalk.concurrent.internal.DeliberateException;
@@ -66,6 +69,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import static io.servicetalk.concurrent.api.AsyncCloseables.emptyAsyncCloseable;
 import static io.servicetalk.concurrent.api.BlockingTestUtils.awaitIndefinitely;
 import static io.servicetalk.concurrent.api.Single.failed;
@@ -90,6 +95,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -129,9 +135,12 @@ abstract class RoundRobinLoadBalancerTest {
     protected abstract RoundRobinLoadBalancer<String, TestLoadBalancedConnection> defaultLb(
             DelegatingConnectionFactory connectionFactory);
 
+    private TestExecutor testExecutor;
+
     @Before
     public void initialize() {
         lb = defaultLb();
+        testExecutor = new TestExecutor();
         connectionsCreated.clear();
         connectionRealizers.clear();
     }
@@ -152,6 +161,7 @@ abstract class RoundRobinLoadBalancerTest {
                 throw new RuntimeException("Connection: " + cnx + " didn't close properly", e);
             }
         });
+        testExecutor.closeAsync().toFuture().get();
     }
 
     @Test
@@ -381,6 +391,48 @@ abstract class RoundRobinLoadBalancerTest {
         awaitIndefinitely(connection.onClose());
     }
 
+    @Test
+    public void hostUnhealthy() throws Exception {
+        serviceDiscoveryPublisher.onComplete();
+        final DelegatingConnectionFactory connectionFactory = new DelegatingConnectionFactory(new Function<String, Single<TestLoadBalancedConnection>>() {
+            final List<Single<TestLoadBalancedConnection>> connections =
+                    Arrays.asList(
+                            failed(DELIBERATE_EXCEPTION),
+                            failed(DELIBERATE_EXCEPTION),
+                            failed(DELIBERATE_EXCEPTION)
+                    );
+
+            int i = 0;
+
+            @Override
+            public Single<TestLoadBalancedConnection> apply(final String s) {
+                System.out.println("Executing with i = " + i);
+                if (i >= connections.size()) {
+                    return newRealizedConnectionSingle(s);
+                }
+                return connections.get(i++);
+            }
+        });
+
+        lb = newTestLoadBalancer(serviceDiscoveryPublisher, connectionFactory, true, testExecutor);
+
+        sendServiceDiscoveryEvents(upEvent("address-1"));
+
+        Exception e = assertThrows(ExecutionException.class, () -> lb.selectConnection(any()).toFuture().get());
+        assertThat(e.getCause(), instanceOf(DELIBERATE_EXCEPTION.getClass()));
+
+        System.out.println("Tried selecting first connection");
+
+        testExecutor.advanceTimeBy(1, SECONDS);
+        testExecutor.advanceTimeBy(1, SECONDS);
+        testExecutor.advanceTimeBy(1, SECONDS);
+
+        System.out.println("3 seconds have passed");
+        // testExecutor.executeNextScheduledTask();
+
+        lb.selectConnection(any()).toFuture().get();
+    }
+
     @SuppressWarnings("unchecked")
     protected void sendServiceDiscoveryEvents(final ServiceDiscovererEvent... events) {
         sendServiceDiscoveryEvents(serviceDiscoveryPublisher, events);
@@ -408,7 +460,21 @@ abstract class RoundRobinLoadBalancerTest {
     protected RoundRobinLoadBalancer<String, TestLoadBalancedConnection> newTestLoadBalancer(
             final TestPublisher<ServiceDiscovererEvent<String>> serviceDiscoveryPublisher,
             final DelegatingConnectionFactory connectionFactory, final boolean eagerConnectionShutdown) {
-        return new RoundRobinLoadBalancer<>(serviceDiscoveryPublisher, connectionFactory, eagerConnectionShutdown);
+        return newTestLoadBalancer(serviceDiscoveryPublisher, connectionFactory, eagerConnectionShutdown, testExecutor);
+    }
+
+    protected RoundRobinLoadBalancer<String, TestLoadBalancedConnection> newTestLoadBalancer(
+            final TestPublisher<ServiceDiscovererEvent<String>> serviceDiscoveryPublisher,
+            final DelegatingConnectionFactory connectionFactory, final boolean eagerConnectionShutdown,
+            @Nullable final Executor executor) {
+        RoundRobinLoadBalancerFactory.Builder<String, TestLoadBalancedConnection> builder =
+                new RoundRobinLoadBalancerFactory.Builder<String, TestLoadBalancedConnection>()
+                        .eagerConnectionShutdown(eagerConnectionShutdown);
+        if (executor != null) {
+            builder.backgroundExecutor(executor);
+        }
+        return (RoundRobinLoadBalancer<String, TestLoadBalancedConnection>) builder.build()
+                .newLoadBalancer(serviceDiscoveryPublisher, connectionFactory);
     }
 
     @SafeVarargs

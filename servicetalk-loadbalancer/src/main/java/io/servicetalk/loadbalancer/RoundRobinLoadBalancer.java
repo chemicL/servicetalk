@@ -28,6 +28,9 @@ import io.servicetalk.concurrent.PublisherSource.Subscription;
 import io.servicetalk.concurrent.api.AsyncCloseable;
 import io.servicetalk.concurrent.api.Completable;
 import io.servicetalk.concurrent.api.CompositeCloseable;
+import io.servicetalk.concurrent.api.DefaultThreadFactory;
+import io.servicetalk.concurrent.api.Executor;
+import io.servicetalk.concurrent.api.Executors;
 import io.servicetalk.concurrent.api.ListenableAsyncCloseable;
 import io.servicetalk.concurrent.api.Publisher;
 import io.servicetalk.concurrent.api.Single;
@@ -42,7 +45,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
@@ -85,6 +90,10 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
     private static final Object[] CLOSED_ARRAY = new Object[0];
     private static final Object[] EMPTY_ARRAY = new Object[0];
 
+    static final String BACKGROUND_PROCESSING_EXECUTOR_NAME = "round-robin-load-balancer-executor";
+    static final Executor SHARED_EXECUTOR = Executors.newFixedSizeExecutor(1,
+            new DefaultThreadFactory(BACKGROUND_PROCESSING_EXECUTOR_NAME));
+
     @SuppressWarnings("rawtypes")
     private static final AtomicReferenceFieldUpdater<RoundRobinLoadBalancer, List> activeHostsUpdater =
             newUpdater(RoundRobinLoadBalancer.class, List.class, "activeHosts");
@@ -116,6 +125,7 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
     private final Publisher<Object> eventStream;
     private final SequentialCancellable discoveryCancellable = new SequentialCancellable();
     private final ConnectionFactory<ResolvedAddress, ? extends C> connectionFactory;
+    private final Executor healthCheckExecutor;
     private final ListenableAsyncCloseable asyncCloseable;
 
     /**
@@ -129,7 +139,7 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
     @Deprecated
     public RoundRobinLoadBalancer(final Publisher<? extends ServiceDiscovererEvent<ResolvedAddress>> eventPublisher,
                                   final ConnectionFactory<ResolvedAddress, ? extends C> connectionFactory) {
-        this(eventPublisher, connectionFactory, true);
+        this(eventPublisher, connectionFactory, true, SHARED_EXECUTOR);
     }
 
     /**
@@ -144,10 +154,12 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
      */
     RoundRobinLoadBalancer(final Publisher<? extends ServiceDiscovererEvent<ResolvedAddress>> eventPublisher,
                            final ConnectionFactory<ResolvedAddress, ? extends C> connectionFactory,
-                           final boolean eagerConnectionShutdown) {
+                           final boolean eagerConnectionShutdown,
+                           final Executor healthCheckExecutor) {
         Processor<Object, Object> eventStreamProcessor = newPublisherProcessorDropHeadOnOverflow(32);
         this.eventStream = fromSource(eventStreamProcessor);
         this.connectionFactory = requireNonNull(connectionFactory);
+        this.healthCheckExecutor = requireNonNull(healthCheckExecutor);
 
         toSource(eventPublisher).subscribe(new Subscriber<ServiceDiscovererEvent<ResolvedAddress>>() {
 
@@ -330,6 +342,40 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
         return eventStream;
     }
 
+    private static class HealthCheck<ResolvedAddress, C extends LoadBalancedConnection> implements Runnable {
+        private Executor executor;
+        private Predicate<C> selector;
+        private ConnectionFactory<ResolvedAddress, ? extends C> connectionFactory;
+        private Host<ResolvedAddress, C> host;
+
+        public HealthCheck(final Executor executor, final Predicate<C> selector,
+                           final ConnectionFactory<ResolvedAddress, ? extends C> connectionFactory,
+                           final Host<ResolvedAddress, C> host) {
+            this.executor = executor;
+            this.selector = selector;
+            this.connectionFactory = connectionFactory;
+            this.host = host;
+        }
+
+        @Override
+        public void run() {
+            connectionFactory.newConnection(host.address, null)
+                    .flatMapCompletable(newCnx -> {
+                        if (!selector.test(newCnx)) {
+                            return newCnx.closeAsync().concat(Completable.failed(new RuntimeException()));
+                        }
+                        if (host.addConnection(newCnx)) {
+                            host.isHealthy = true;
+                        } else {
+                            return newCnx.closeAsync().concat(Completable.failed(new RuntimeException()));
+                        }
+                        return completed();
+                    })
+                    .afterOnError(e -> executor.schedule(this, 1, TimeUnit.SECONDS))
+                    .subscribeShareContext()
+                    .subscribe();
+        }
+    }
     private Single<C> selectConnection0(Predicate<C> selector) {
         final List<Host<ResolvedAddress, C>> activeHosts = this.activeHosts;
         if (activeHosts.isEmpty()) {
@@ -364,7 +410,7 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
                 }
             }
 
-            // don't open new connections for expired hosts, try a different one
+            // don't open new connections for expired or unhealthy hosts, try a different one
             if (host.isActive()) {
                 pickedHost = host;
                 break;
@@ -380,6 +426,9 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
         // This LB implementation does not automatically provide TransportObserver. Therefore, we pass "null" here.
         // Users can apply a ConnectionFactoryFilter if they need to override this "null" value with TransportObserver.
         return connectionFactory.newConnection(host.address, null)
+                .afterOnError(t ->
+                        healthCheckExecutor.schedule(new HealthCheck<ResolvedAddress, C>(
+                                healthCheckExecutor, selector, connectionFactory, host), 1, TimeUnit.SECONDS))
                 .flatMap(newCnx -> {
                     // Invoke the selector before adding the connection to the pool, otherwise, connection can be
                     // used concurrently and hence a new connection can be rejected by the selector.
@@ -431,7 +480,7 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
         public <T extends C> LoadBalancer<T> newLoadBalancer(
                 final Publisher<? extends ServiceDiscovererEvent<ResolvedAddress>> eventPublisher,
                 final ConnectionFactory<ResolvedAddress, T> connectionFactory) {
-            return new RoundRobinLoadBalancer<>(eventPublisher, connectionFactory, true);
+            return new RoundRobinLoadBalancer<>(eventPublisher, connectionFactory, true, SHARED_EXECUTOR);
         }
     }
 
@@ -459,6 +508,7 @@ public final class RoundRobinLoadBalancer<ResolvedAddress, C extends LoadBalance
         final Addr address;
         volatile State state = State.ACTIVE;
         volatile Object[] connections = EMPTY_ARRAY;
+        volatile boolean isHealthy = true;
 
         private final ListenableAsyncCloseable closeable;
 
