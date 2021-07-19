@@ -44,8 +44,7 @@ public final class SniServerChannelInitializer implements ChannelInitializer {
 
     @Override
     public void init(final Channel channel) {
-        final SniHandlerWithPooledAllocator sniHandlerWithPooledAllocator = new SniHandlerWithPooledAllocator(sniMapping);
-        channel.pipeline().addLast(sniHandlerWithPooledAllocator);
+        channel.pipeline().addLast(new SniHandlerWithPooledAllocator(sniMapping));
     }
 
     /**

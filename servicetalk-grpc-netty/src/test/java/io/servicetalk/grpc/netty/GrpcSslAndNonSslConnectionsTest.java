@@ -15,11 +15,9 @@
  */
 package io.servicetalk.grpc.netty;
 
-import io.servicetalk.concurrent.internal.ServiceTalkTestTimeout;
 import io.servicetalk.grpc.api.GrpcClientBuilder;
 import io.servicetalk.grpc.api.GrpcStatusException;
 import io.servicetalk.grpc.netty.TesterProto.Tester.BlockingTesterClient;
-import io.servicetalk.logging.api.LogLevel;
 import io.servicetalk.test.resources.DefaultTestCerts;
 import io.servicetalk.transport.api.ClientSslConfigBuilder;
 import io.servicetalk.transport.api.HostAndPort;
@@ -28,60 +26,47 @@ import io.servicetalk.transport.api.ServerSslConfig;
 import io.servicetalk.transport.api.ServerSslConfigBuilder;
 import io.servicetalk.transport.netty.internal.StacklessClosedChannelException;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Timeout;
+import org.junit.jupiter.api.Test;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import javax.annotation.Nonnull;
 import javax.net.ssl.SSLHandshakeException;
 
 import static io.servicetalk.grpc.netty.ExecutionStrategyTestServices.DEFAULT_STRATEGY_ASYNC_SERVICE;
 import static io.servicetalk.test.resources.DefaultTestCerts.serverPemHostname;
-import static io.servicetalk.transport.api.SslProvider.JDK;
-import static io.servicetalk.transport.api.SslProvider.OPENSSL;
 import static io.servicetalk.transport.netty.internal.AddressUtils.localAddress;
 import static io.servicetalk.transport.netty.internal.AddressUtils.serverHostAndPort;
-import static java.util.Collections.emptyMap;
+import static java.net.InetAddress.getLoopbackAddress;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class GrpcSslAndNonSslConnectionsTest {
+class GrpcSslAndNonSslConnectionsTest {
 
-    private static final String SNI_HOSTNAME = "servicetalk.io";
     private static final TesterProto.TestRequest REQUEST = TesterProto.TestRequest.newBuilder().setName("test").build();
 
-    @Rule
-    public final Timeout timeout = new ServiceTalkTestTimeout();
-
-    private ServerContext grpcServer(TesterProto.Tester.ServiceFactory... serviceFactories) throws Exception {
+    private ServerContext nonSecureGrpcServer() throws Exception {
         return GrpcServers.forAddress(localAddress(0))
-                .listenAndAwait(serviceFactories);
+                .listenAndAwait(serviceFactory());
     }
 
-    private ServerContext secureGrpcServer(TesterProto.Tester.ServiceFactory... serviceFactories)
+    private ServerContext secureGrpcServer()
             throws Exception {
         return GrpcServers.forAddress(localAddress(0))
                 .sslConfig(
                         trustedServerConfig()
                 )
-                .listenAndAwait(serviceFactories);
+                .listenAndAwait(serviceFactory());
     }
 
     private GrpcClientBuilder<HostAndPort, InetSocketAddress> secureGrpcClient(
             final ServerContext serverContext, final ClientSslConfigBuilder sslConfigBuilder) {
-        return GrpcClients.forAddress(serverHostAndPort(serverContext))
-                .sslConfig(
-                        sslConfigBuilder.build()
-                );
+        return GrpcClients.forAddress(serverHostAndPort(serverContext)).sslConfig(sslConfigBuilder.build());
     }
 
-    private BlockingTesterClient grpcClient(ServerContext serverContext) {
+    private BlockingTesterClient nonSecureGrpcClient(ServerContext serverContext) {
         return GrpcClients.forAddress(serverHostAndPort(serverContext))
                 .buildBlocking(clientFactory());
     }
@@ -98,16 +83,16 @@ public class GrpcSslAndNonSslConnectionsTest {
 
     private static ServerSslConfig untrustedServerConfig() {
         // Need a key that won't be trusted by the client, just use the client's key.
-        return new ServerSslConfigBuilder(DefaultTestCerts::loadClientPem,
-                DefaultTestCerts::loadClientKey)
-                .sslProtocols("TLSv1_3")
-                .alpnProtocols()
-                .provider(OPENSSL).build();
+        return new ServerSslConfigBuilder(DefaultTestCerts::loadClientPem, DefaultTestCerts::loadClientKey).build();
+    }
+
+    private ServerSslConfig trustedServerConfig() {
+        return new ServerSslConfigBuilder(DefaultTestCerts::loadServerPem, DefaultTestCerts::loadServerKey).build();
     }
 
     @Test
-    public void connectingToSecureServerWithSecureClient() throws Exception {
-        try (ServerContext serverContext = secureGrpcServer(serviceFactory());
+    void connectingToSecureServerWithSecureClient() throws Exception {
+        try (ServerContext serverContext = secureGrpcServer();
              BlockingTesterClient client = secureGrpcClient(serverContext,
                      new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
                              .peerHost(serverPemHostname()))
@@ -119,8 +104,8 @@ public class GrpcSslAndNonSslConnectionsTest {
     }
 
     @Test
-    public void secureClientToNonSecureServerClosesConnection() throws Exception {
-        try (ServerContext serverContext = grpcServer(serviceFactory());
+    void secureClientToNonSecureServerClosesConnection() throws Exception {
+        try (ServerContext serverContext = nonSecureGrpcServer();
              BlockingTesterClient client = secureGrpcClient(serverContext,
                      new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
                              .peerHost(serverPemHostname()))
@@ -131,17 +116,17 @@ public class GrpcSslAndNonSslConnectionsTest {
     }
 
     @Test
-    public void nonSecureClientToSecureServerClosesConnection() throws Exception {
-        try (ServerContext serverContext = secureGrpcServer(serviceFactory());
-             BlockingTesterClient client = grpcClient(serverContext)) {
+    void nonSecureClientToSecureServerClosesConnection() throws Exception {
+        try (ServerContext serverContext = secureGrpcServer();
+             BlockingTesterClient client = nonSecureGrpcClient(serverContext)) {
             GrpcStatusException e = assertThrows(GrpcStatusException.class, () -> client.test(REQUEST));
             assertThat(e.getCause(), instanceOf(StacklessClosedChannelException.class));
         }
     }
 
     @Test
-    public void secureClientToSecureServerWithoutPeerHost() throws Exception {
-        try (ServerContext serverContext = secureGrpcServer(serviceFactory());
+    void secureClientToSecureServerWithoutPeerHostSucceeds() throws Exception {
+        try (ServerContext serverContext = secureGrpcServer();
              BlockingTesterClient client = secureGrpcClient(serverContext,
                      new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
                              .peerHost(null)
@@ -156,31 +141,19 @@ public class GrpcSslAndNonSslConnectionsTest {
     }
 
     @Test
-    public void noSniClientDefaultServerFallbackSuccess() throws Exception {
+    void noSniClientDefaultServerFallbackSuccess() throws Exception {
         try (ServerContext serverContext = GrpcServers.forAddress(localAddress(0))
                 .sslConfig(
                         trustedServerConfig(),
-                        emptyMap()
-                        // singletonMap("localhost", untrustedServerConfig())
+                        singletonMap(getLoopbackAddress().getHostName(), untrustedServerConfig())
                 )
-                .enableWireLogging("SERVER", LogLevel.INFO, () -> true)
                 .listenAndAwait(serviceFactory());
-             // BlockingTesterClient client = secureGrpcClient(serverContext,
-             //         new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
-             //                 .peerHost(serverPemHostname()))
-             //         .buildBlocking(clientFactory())
-             // BlockingTesterClient client = secureGrpcClient(serverContext, new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
-             //         .peerHost(serverPemHostname())).buildBlocking(clientFactory())
              BlockingTesterClient client = GrpcClients.forAddress(
-                     InetAddress.getLoopbackAddress().getHostName(), serverHostAndPort(serverContext).port())
-                     .sslConfig(
-                             new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
-                                     // .peerHost(serverPemHostname()).hostnameVerificationAlgorithm("").build()
-                                     .peerHost(null).hostnameVerificationAlgorithm("").sslProtocols("TLSv1.3").provider(OPENSSL).build()
-                     ).enableWireLogging("CLIENT", LogLevel.INFO, () -> true)
+                     getLoopbackAddress().getHostName(), serverHostAndPort(serverContext).port())
+                     .sslConfig(new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
+                             .peerHost(serverPemHostname()).build())
                      .inferSniHostname(false)
-                     .inferPeerHost(false)
-                     .buildBlocking(clientFactory())
+                     .buildBlocking(clientFactory());
         ) {
             final TesterProto.TestResponse response = client.test(REQUEST);
             assertThat(response, is(notNullValue()));
@@ -188,16 +161,23 @@ public class GrpcSslAndNonSslConnectionsTest {
         }
     }
 
-    @Nonnull
-    private ServerSslConfig trustedServerConfig() {
-        return new ServerSslConfigBuilder(DefaultTestCerts::loadServerPem, DefaultTestCerts::loadServerKey)
-                .sslProtocols("TLSv1.3")
-                .provider(OPENSSL)
-                .build();
-    }
-
     @Test
-    public void noSniClientDefaultServerFallbackFailExpected() throws Exception {
-
+    void noSniClientDefaultServerFallbackFailExpected() throws Exception {
+        try (ServerContext serverContext = GrpcServers.forAddress(localAddress(0))
+                .sslConfig(
+                        untrustedServerConfig(),
+                        singletonMap(getLoopbackAddress().getHostName(), trustedServerConfig())
+                )
+                .listenAndAwait(serviceFactory());
+             BlockingTesterClient client = GrpcClients.forAddress(
+                     getLoopbackAddress().getHostName(), serverHostAndPort(serverContext).port())
+                     .sslConfig(new ClientSslConfigBuilder(DefaultTestCerts::loadServerCAPem)
+                             .peerHost(serverPemHostname()).build())
+                     .inferSniHostname(false)
+                     .buildBlocking(clientFactory());
+        ) {
+            GrpcStatusException e = assertThrows(GrpcStatusException.class, () -> client.test(REQUEST));
+            assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
+        }
     }
 }
