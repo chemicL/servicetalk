@@ -81,7 +81,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -983,7 +982,7 @@ class ProtocolCompatibilityTest {
         }
         return ssl ?
                 serverBuilder.sslConfig(new ServerSslConfigBuilder(DefaultTestCerts::loadServerPem,
-                        DefaultTestCerts::loadServerKey).provider(OPENSSL).build(), Collections.emptyMap()) :
+                        DefaultTestCerts::loadServerKey).provider(OPENSSL).build()) :
                 serverBuilder;
     }
 

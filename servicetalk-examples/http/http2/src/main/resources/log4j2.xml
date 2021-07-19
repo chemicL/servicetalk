@@ -29,7 +29,7 @@
     <Logger name="io.servicetalk.concurrent.api" level="DEBUG"/>
 
     <!-- Use `-Dservicetalk.logger.level=DEBUG` to change the root logger level via command line  -->
-    <Root level="${sys:servicetalk.logger.level:-TRACE}">
+    <Root level="${sys:servicetalk.logger.level:-INFO}">
       <AppenderRef ref="Console"/>
     </Root>
   </Loggers>
