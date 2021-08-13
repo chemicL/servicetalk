@@ -35,7 +35,7 @@ import io.servicetalk.transport.api.IoExecutor;
  * @param <R> the type of address after resolution (resolved address)
  */
 public abstract class PartitionedHttpClientBuilder<U, R>
-        implements HttpClientBuildFinalizer, ExecutionContextAwareHttpBuilder<R> {
+        implements HttpClientBuildFinalizer, ExecutionContextAwareHttpBuilder {
     /**
      * Initializes the {@link SingleAddressHttpClientBuilder} for each new client.
      * @param <U> the type of address before resolution (unresolved address)
