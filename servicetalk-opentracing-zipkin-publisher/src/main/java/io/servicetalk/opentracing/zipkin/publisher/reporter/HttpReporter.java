@@ -257,18 +257,6 @@ public final class HttpReporter extends Component implements Reporter<Span>, Asy
         }
 
         /**
-         * Disable batching of spans before sending them to the zipkin collector.
-         *
-         * @return {@code this}.
-         * @deprecated Use {@link #spansBatchingEnabled(boolean)}.
-         */
-        @Deprecated
-        public Builder disableSpanBatching() {
-            this.batchingEnabled = false;
-            return this;
-        }
-
-        /**
          * Configure batching of spans before sending them to the zipkin collector.
          * @param enable When {@code false} batching will be disabled.
          * @return {@code this}.
