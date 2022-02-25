@@ -73,6 +73,18 @@ public interface GrpcClientBuilder<U, R> {
     GrpcClientBuilder<U, R> defaultTimeout(Duration defaultTimeout);
 
     /**
+     * Allows reusing the underlying transport layer between {@link GrpcClient} or {@link BlockingGrpcClient}
+     * instances created using {@link #build(GrpcClientFactory)} or {@link #buildBlocking(GrpcClientFactory)}
+     * invocations.
+     * <p>
+     * <string>This option causes other settings on this builder have no effect after first client instance
+     * is created</string>.
+     * @param reuse Should underlying transport be reused between created clients.
+     * @return {@code this}.
+     */
+    GrpcClientBuilder<U, R> reuseTransport(boolean reuse);
+
+    /**
      * Builds a <a href="https://www.grpc.io">gRPC</a> client.
      *
      * @param clientFactory {@link GrpcClientFactory} to use.

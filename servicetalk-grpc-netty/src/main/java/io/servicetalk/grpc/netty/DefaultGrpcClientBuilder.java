@@ -61,6 +61,12 @@ final class DefaultGrpcClientBuilder<U, R> implements GrpcClientBuilder<U, R> {
 
     @Nullable
     private Duration defaultTimeout;
+
+    @Nullable
+    private GrpcClientCallFactory callFactory;
+
+    private boolean reuseTransport;
+
     private HttpInitializer<U, R> httpInitializer = builder -> {
         // no-op
     };
@@ -78,20 +84,40 @@ final class DefaultGrpcClientBuilder<U, R> implements GrpcClientBuilder<U, R> {
     }
 
     @Override
-    public GrpcClientBuilder<U, R> defaultTimeout(Duration defaultTimeout) {
+    public GrpcClientBuilder<U, R> defaultTimeout(final Duration defaultTimeout) {
         this.defaultTimeout = ensurePositive(defaultTimeout, "defaultTimeout");
         return this;
     }
 
     @Override
+    public GrpcClientBuilder<U, R> reuseTransport(final boolean reuseTransport) {
+        this.reuseTransport = reuseTransport;
+        if (!reuseTransport) {
+            this.callFactory = null;
+        }
+        return this;
+    }
+
+    @Override
     public <Client extends GrpcClient<?>> Client build(GrpcClientFactory<Client, ?> clientFactory) {
-        return clientFactory.newClientForCallFactory(newGrpcClientCallFactory());
+        return clientFactory.newClientForCallFactory(getOrCreateCallFactory());
     }
 
     @Override
     public <BlockingClient extends BlockingGrpcClient<?>> BlockingClient buildBlocking(
             GrpcClientFactory<?, BlockingClient> clientFactory) {
-        return clientFactory.newBlockingClientForCallFactory(newGrpcClientCallFactory());
+        return clientFactory.newBlockingClientForCallFactory(getOrCreateCallFactory());
+    }
+
+    private GrpcClientCallFactory getOrCreateCallFactory() {
+        GrpcClientCallFactory callFactory = this.callFactory;
+        if (null == callFactory) {
+            callFactory = newGrpcClientCallFactory();
+        }
+        if (reuseTransport) {
+            this.callFactory = callFactory;
+        }
+        return callFactory;
     }
 
     private GrpcClientCallFactory newGrpcClientCallFactory() {
